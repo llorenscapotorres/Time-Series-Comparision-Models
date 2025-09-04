@@ -8,4 +8,4 @@ dependencies:
   - pip
   - jupyterlab
   - pip:
-    - -r file:requirements.txt
+    - -r requirements.txt
