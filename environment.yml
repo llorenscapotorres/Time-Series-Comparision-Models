@@ -1,0 +1,11 @@
+# conda env create -f environment.yml
+name: ts
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - jupyterlab
+  - pip:
+    - -r file:requirements.txt
