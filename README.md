@@ -1,4 +1,4 @@
-#Time Series Comparison Models
+# Time Series Comparison Models
 
 This repository contains the implementation and evaluation of multiple multivariate time series (MTS) forecasting models applied to real-world datasets. The project aims to systematically compare baseline statistical models, deep learning architectures, and recent state-of-the-art approaches, highlighting their trade-offs in terms of accuracy, interpretability, and computational cost.
 
