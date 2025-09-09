@@ -4,11 +4,12 @@ import os
 def load_csv_into_dates(dirname: str,
                         start_date: str = '2014-01-01',
                         end_date: str = '2025-01-06',
-                        column_name: str = None):
+                        column_name: str = None,
+                        header=0):
     """
     Takes one or more CSV files, and load them into the dates that you want.
     """
-    df = pd.read_csv(dirname, header=0, index_col=0)
+    df = pd.read_csv(dirname, header=header, index_col=0)
     df.index = pd.to_datetime(df.index)
     if column_name:
         df = df.loc[:, column_name]
@@ -34,4 +35,4 @@ def load_csv_and_glue_time_series(folder_path: str,
                                         column_name=column_name)
             df = pd.concat([df, df_next])
             df = df[~df.index.duplicated(keep='last')]
-    return df
+    return df.sort_index(ascending=True)
