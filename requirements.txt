@@ -1,6 +1,5 @@
-numpy==1.*
+numpy
 pandas
-tensorflow==2.10
 matplotlib
 seaborn
 plotly
@@ -8,3 +7,5 @@ statsmodels
 pmdarima
 holidays
 lightgbm
+torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+darts[u]
