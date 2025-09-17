@@ -1,36 +1,29 @@
-import tensorflow as tf
+import numpy as np
 
 def make_preds(model, input_data):
     """
     Uses a model to make predictions on input_data.
     """
     forecast = model.predict(input_data)
-    return tf.squeeze(forecast) # return 1D array of predictions
+    return np.squeeze(forecast)  # return 1D array of predictions
 
 def evaluate_preds(y_true, y_pred):
     """
     Take in the model predictions and truth values and return evaluation metrics.
     """
-    # Make sure float32 datatype (for metric calculation)
-    y_true = tf.cast(y_true, dtype=tf.float32)
-    y_pred = tf.cast(y_pred, dtype=tf.float32)
+    # Convert to numpy arrays with float32
+    y_true = np.array(y_true, dtype=np.float32)
+    y_pred = np.array(y_pred, dtype=np.float32)
 
-    # Calculate various evaluation metrics
-    mae = tf.keras.metrics.mean_absolute_error(y_true, y_pred)
-    mse = tf.keras.metrics.mean_squared_error(y_true, y_pred)
-    rmse = tf.sqrt(mse)
-    mape = tf.keras.metrics.mean_absolute_percentage_error(y_true, y_pred)
-
-    # Account for different sized metrics (for longer horizons, we want to reduce metrics to a single value)
-    if mae.ndim > 0:
-        mae = tf.reduce_mean(mae)
-        mse = tf.reduce_mean(mse)
-        rmse = tf.reduce_mean(rmse)
-        mape = tf.reduce_mean(mape)
+    # Calculate metrics
+    mae = np.mean(np.abs(y_true - y_pred))                       # Mean Absolute Error
+    mse = np.mean((y_true - y_pred) ** 2)                        # Mean Squared Error
+    rmse = np.sqrt(mse)                                          # Root Mean Squared Error
+    mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100  # Mean Absolute Percentage Error
 
     return {
-        'mae': mae.numpy(),
-        'mse': mse.numpy(),
-        'rmse': rmse.numpy(),
-        'mape': mape.numpy()
+        'mae': mae,
+        'mse': mse,
+        'rmse': rmse,
+        'mape': mape
     }

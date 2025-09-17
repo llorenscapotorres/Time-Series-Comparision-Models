@@ -5,7 +5,15 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - pip
   - jupyterlab
-  - pip:
-    - -r requirements.txt
+  - numpy
+  - pandas
+  - matplotlib
+  - seaborn
+  - plotly
+  - statsmodels
+  - holidays
+  - lightgbm
+  - pyarrow
+  - pmdarima
+  - pip
