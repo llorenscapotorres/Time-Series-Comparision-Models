@@ -106,7 +106,7 @@ def make_predictions_rolling_one_past_covariates_darts(ts_train: TimeSeries,
     return preds
 
 def make_predictions_rolling_one_nf(train_df: pd.DataFrame,
-                                    test_df: pd.DataFrame,
+                                    test_exog_df: pd.DataFrame,
                                     length_prediction: int,
                                     y_true: np.array,
                                     model):
@@ -115,7 +115,7 @@ def make_predictions_rolling_one_nf(train_df: pd.DataFrame,
 
     for i in range(length_prediction):
 
-        current_exog = test_df.iloc[i:i+1].copy()
+        current_exog = test_exog_df.iloc[i:i+1].copy()
         pred = model.predict(
             df=df_current,
             futr_df=current_exog
