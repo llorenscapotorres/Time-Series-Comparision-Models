@@ -16,4 +16,6 @@ dependencies:
   - lightgbm
   - pyarrow
   - pmdarima
+  - neuralforecast
+  - darts
   - pip
