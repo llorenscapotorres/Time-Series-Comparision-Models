@@ -1,6 +1,8 @@
 # conda env create -f environment.yml
 name: ts
 channels:
+  - pytorch
+  - nvidia
   - conda-forge
   - defaults
 dependencies:
@@ -17,5 +19,8 @@ dependencies:
   - pyarrow
   - pmdarima
   - neuralforecast
+  - pytorch
+  - torchvision
+  - torchaudio
   - darts
   - pip
