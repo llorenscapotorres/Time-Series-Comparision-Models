@@ -31,6 +31,57 @@ def evaluate_preds(y_true, y_pred):
         'mape': mape
     }
 
+def evaluate_preds_global(y_true, y_pred, horizon=None):
+    """
+    Take in the model predictions and truth values and return evaluation metrics.
+    """
+    # Convert to numpy arrays with float32
+    y_true = np.array(y_true, dtype=np.float32)
+    y_pred = np.array(y_pred, dtype=np.float32)
+
+    if y_true.shape != y_pred.shape:
+        raise ValueError(f'Shapes must match, got {y_true.shape} vs {y_pred.shape}')
+
+    # Flatten both arrays
+    y_true_flat = y_true.flatten()
+    y_pred_flat = y_pred.flatten()
+
+    # Calculate metrics
+    mae = np.mean(np.abs(y_true - y_pred))                       # Mean Absolute Error
+    mse = np.mean((y_true - y_pred) ** 2)                        # Mean Squared Error
+    rmse = np.sqrt(mse)                                          # Root Mean Squared Error
+    mape = np.mean(np.abs((y_true - y_pred) / (y_true + 1e-8))) * 100  # Mean Absolute Percentage Error
+
+    return {
+        'mae': mae,
+        'mse': mse,
+        'rmse': rmse,
+        'mape': mape
+    }
+
+def evaluate_preds_marginal(y_true, y_pred):
+    """
+    Calculates the MAE, MSE, RMSE, and MAPE metrics per forecast horizon.
+    """
+    y_true = np.array(y_true, dtype=np.float32)
+    y_pred = np.array(y_pred, dtype=np.float32)
+    
+    if y_true.shape != y_pred.shape:
+        raise ValueError(f"Shapes must match, got {y_true.shape} vs {y_pred.shape}")
+    
+    H = y_true.shape[1]  # number of forecast horizons
+    results = {}
+
+    for h in range(H):
+        mae = np.mean(np.abs(y_true[:, h] - y_pred[:, h]))
+        mse = np.mean((y_true[:, h] - y_pred[:, h]) ** 2)
+        rmse = np.sqrt(mse)
+        mape = np.mean(np.abs((y_true[:, h] - y_pred[:, h]) / (y_true[:, h] + 1e-8))) * 100
+
+        results[f'h{h+1}'] = {'mae': mae, 'mse': mse, 'rmse': rmse, 'mape': mape}
+
+    return results
+
 def make_predictions_rolling_one_darts(ts_train: TimeSeries, 
                                        ts_test: TimeSeries, 
                                        ts_exogenus_train: TimeSeries, 
