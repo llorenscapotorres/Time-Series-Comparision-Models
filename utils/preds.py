@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from darts import TimeSeries
 from darts.dataprocessing.transformers import Scaler
+from typing import List
 
 def make_preds(model, input_data):
     """
@@ -220,3 +221,90 @@ def make_predictions_darts_horizon(ts_train: TimeSeries,
             current_exogenus = current_exogenus.append(value_exo_ts)
 
     return preds
+
+def make_predictions_rolling_horizon_nf(train_df: pd.DataFrame,
+                                     test_exog_df: pd.DataFrame,
+                                     length_prediction: int,
+                                     y_true: np.ndarray,
+                                     model,
+                                     horizon: int = 7) -> np.ndarray:
+    """
+    Rolling predictions en bloques de tamaño `horizon`.
+
+    Parámetros
+    ----------
+    train_df : pd.DataFrame
+        Dataframe de entrenamiento inicial que contiene columnas exógenas y 'y' hasta el último dato conocido.
+    test_exog_df : pd.DataFrame
+        Dataframe con las variables exógenas del periodo de test (longitud >= length_prediction).
+        Se asume que la fila 0 de test_exog_df corresponde al primer día a predecir.
+    length_prediction : int
+        Número total de días en el conjunto de test (ej: 127).
+    y_true : np.ndarray
+        Vector con los valores reales del conjunto de test (longitud >= length_prediction).
+    model :
+        Modelo que implementa `.predict(df=df_current, futr_df=futr_df)` y devuelve
+        una estructura desde la que se pueda extraer las predicciones (aquí se asume DataFrame/array).
+    horizon : int
+        Horizonte de predicción (por defecto 7).
+
+    Retorna
+    -------
+    np.ndarray
+        Matriz de forma (num_iteraciones, horizon) con las predicciones. num_iteraciones = length_prediction - horizon.
+    """
+
+    preds_blocks: List[np.ndarray] = []
+    df_current = train_df.copy()
+
+    # número de bloques que quieres generar (según tu requerimiento)
+    num_iters = length_prediction - horizon
+    if num_iters <= 0:
+        raise ValueError("length_prediction debe ser mayor que horizon")
+
+    # Pre-computamos la "última exógena conocida" para cada i durante las iteraciones
+    # (test_exog_df debe tener al menos length_prediction filas)
+    for i in range(0, num_iters):
+        # Índices de los días que queremos predecir: i .. i+horizon-1
+        futr = test_exog_df.iloc[i:i + horizon].copy()
+
+        # Disponibilidad de exógenas: solo conocemos exógenas hasta el día i (incluido).
+        # Por tanto, para las filas j>i dentro del bloque, rellenamos con la última exógena conocida (fila i).
+        if len(futr) < horizon:
+            # Si no hay suficientes filas (precaución), rellenamos con la última fila disponible
+            last_known = test_exog_df.iloc[i:i+1].reindex(range(horizon)).ffill().iloc[0]
+            futr = pd.DataFrame([last_known.copy() for _ in range(horizon)], columns=last_known.index)
+        else:
+            # Las filas futr.iloc[1:], futr.iloc[2:], ... corresponden a exógenas futuras no observadas.
+            # Rellenamos esas filas con la fila futr.iloc[0] (última exógena observada).
+            if horizon > 1:
+                first_row = futr.iloc[0]
+                # Reemplazamos todas las filas j>0 por first_row
+                for j in range(1, horizon):
+                    futr.iloc[j] = first_row
+
+        # Llamada al modelo (ajusta si tu modelo devuelve otro tipo)
+        pred_block = model.predict(df=df_current, futr_df=futr)
+
+        # Extrae las predicciones del bloque en formato 1D numpy array:
+        # Aquí asumo que `pred_block` es un DataFrame con la columna 'y' o un array con shape (horizon,)
+        if isinstance(pred_block, pd.DataFrame):
+            # intentamos extraer la columna 'y' o la tercera columna como en tu código original
+            if 'y' in pred_block.columns:
+                block_values = pred_block['y'].to_numpy().reshape(-1)[:horizon]
+            else:
+                # fallback: primera columna
+                block_values = pred_block.iloc[:, 0].to_numpy().reshape(-1)[:horizon]
+        else:
+            # si es numpy array
+            block_values = np.asarray(pred_block).reshape(-1)[:horizon]
+
+        preds_blocks.append(block_values)
+
+        # **Actualizamos df_current**: solo añadimos la fila real del primer día del bloque (i)
+        new_row = test_exog_df.iloc[i:i+1].copy()
+        new_row = new_row.reset_index(drop=True)
+        new_row['y'] = y_true[i]
+        df_current = pd.concat([df_current, new_row], ignore_index=True)
+
+    return np.vstack(preds_blocks)  # shape (num_iters, horizon)
